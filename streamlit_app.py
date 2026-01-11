@@ -1,5 +1,8 @@
 import streamlit as st
 
-st.title('🎈 App Name')
+st.title("Let's improve your presentation!")
 
-st.write('Hello world!')
+# st.write('Hello world!')
+
+if st.button('Rozpocznij nagrywanie'):
+    st.write('Nagrywanie rozpoczęte...')

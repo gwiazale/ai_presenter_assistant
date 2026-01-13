@@ -29,20 +29,16 @@ def stop_rec():
 def reset():
     st.session_state.app.update({"rec": False, "start": 0, "last_dur": 0, "fb": ""})
 
-# --- SIDEBAR: USTAWIENIA I AUTOMATYCZNY RESET ---
+# --- WYBÓR TRYBU Z AUTOMATYCZNYM RESETEM ---
 with st.sidebar:
-    st.header("⚙️ Ustawienia")
-    # Zmiana trybu wywołuje funkcję reset()
+    st.header("Ustawienia")
+    # Funkcja on_change wywoła reset(), gdy użytkownik kliknie inną opcję
     mode_selection = st.radio(
-        "Wybierz tryb pracy:", 
+        "Wybierz tryb:", 
         ["Kamera + Mikrofon", "Tylko Mikrofon"],
         on_change=reset
     )
     use_video = mode_selection == "Kamera + Mikrofon"
-
-# --- TYTUŁ APLIKACJI ---
-st.title("🎥 Trener Prezentacji")
-st.write("---")
 
 col_left, col_right = st.columns([1.2, 1], gap="medium")
 
@@ -52,7 +48,6 @@ with col_left:
         "audio": True
     }
     
-    # Klucz zmienia się przy zmianie trybu, co odświeża komponent webrtc
     ctx = webrtc_streamer(
         key=f"camera-{use_video}", 
         mode=WebRtcMode.SENDRECV,
@@ -63,7 +58,6 @@ with col_left:
     is_live = ctx.state.playing if ctx.state else False
 
 with col_right:
-    st.subheader("Sterowanie")
     has_fb = bool(st.session_state.app["fb"])
     is_recording = st.session_state.app["rec"]
 
@@ -77,7 +71,6 @@ with col_right:
     with c3:
         st.button("🔄 Reset", on_click=reset, use_container_width=True)
 
-    # Miejsce na Timer, Instrukcję lub Feedback
     content_area = st.empty()
 
     if is_recording:
@@ -85,6 +78,7 @@ with col_right:
             elapsed = time.time() - st.session_state.app["start"]
             content_area.error(f"🔴 NAGRYWANIE ({'WIDEO' if use_video else 'AUDIO'}): {fmt_time(elapsed)}")
             time.sleep(0.1)
+            # Zabezpieczenie przed zmianą stanu w trakcie pętli
             if not st.session_state.app["rec"]:
                 break
 
@@ -92,9 +86,9 @@ with col_right:
         with content_area.container():
             st.info(f"⏱ Czas sesji: {fmt_time(st.session_state.app['last_dur'])}")
             st.write("---")
-            st.success(st.session_state.app['fb'])
+            st.success(st.session_state.app["fb"])
 
     elif st.session_state.app["last_dur"] == 0:
         device_name = "kamerę i mikrofon" if use_video else "mikrofon"
         content_area.info(
-            f"💡 **Instrukcja:**\n1. Włącz {device_name} przyciskiem **START** nad podglądem.\n2. Kliknij przycisk ▶ **Start**, aby zacząć odliczanie.\n3. Kliknij ⏹ **Stop**, aby zakończyć.")
+            f"💡 **Instrukcja:**\n1. Włącz {device_name} przyciskiem START powyżej.\n2. Kliknij ▶ **Start**, aby zacząć.\n3. Kliknij ⏹ **Stop**, aby zakończyć.")

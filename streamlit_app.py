@@ -5,7 +5,7 @@ from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 # Konfiguracja strony
 st.set_page_config(page_title="Trener Prezentacji", layout="wide")
 
-# KONFIGURACJA RTC (Niezbędna do deployu)
+# KONFIGURACJA RTC
 RTC_CONFIGURATION = RTCConfiguration(
     {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
 )
@@ -24,30 +24,32 @@ def stop_rec():
     if st.session_state.app["start"] > 0:
         st.session_state.app["last_dur"] = time.time() - st.session_state.app["start"]
     st.session_state.app.update(
-        {"rec": False, "fb": "Prezentacja zakończona! Analiza audio gotowa.", "start": 0})
+        {"rec": False, "fb": "Prezentacja zakończona! Analiza gotowa.", "start": 0})
 
 def reset():
     st.session_state.app.update({"rec": False, "start": 0, "last_dur": 0, "fb": ""})
 
-st.title("🎥 Trener Prezentacji")
-
-# --- WYBÓR TRYBU ---
+# --- WYBÓR TRYBU Z AUTOMATYCZNYM RESETEM ---
 with st.sidebar:
     st.header("Ustawienia")
-    mode_selection = st.radio("Wybierz tryb:", ["Kamera + Mikrofon", "Tylko Mikrofon"])
+    # Funkcja on_change wywoła reset(), gdy użytkownik kliknie inną opcję
+    mode_selection = st.radio(
+        "Wybierz tryb:", 
+        ["Kamera + Mikrofon", "Tylko Mikrofon"],
+        on_change=reset
+    )
     use_video = mode_selection == "Kamera + Mikrofon"
 
 col_left, col_right = st.columns([1.2, 1], gap="medium")
 
 with col_left:
-    # Ustawiamy ograniczenia mediów na podstawie wyboru użytkownika
     media_constraints = {
-        "video": use_video, # True jeśli Kamera + Mikrofon, False jeśli Tylko Mikrofon
+        "video": use_video,
         "audio": True
     }
     
     ctx = webrtc_streamer(
-        key=f"camera-{use_video}", # Zmiana klucza przy zmianie trybu, aby zresetować komponent
+        key=f"camera-{use_video}", 
         mode=WebRtcMode.SENDRECV,
         rtc_configuration=RTC_CONFIGURATION,
         media_stream_constraints=media_constraints,
@@ -74,8 +76,9 @@ with col_right:
     if is_recording:
         while st.session_state.app["rec"]:
             elapsed = time.time() - st.session_state.app["start"]
-            content_area.error(f"🔴 NAGRYWANIE: {fmt_time(elapsed)}")
+            content_area.error(f"🔴 NAGRYWANIE ({'WIDEO' if use_video else 'AUDIO'}): {fmt_time(elapsed)}")
             time.sleep(0.1)
+            # Zabezpieczenie przed zmianą stanu w trakcie pętli
             if not st.session_state.app["rec"]:
                 break
 
@@ -89,5 +92,3 @@ with col_right:
         device_name = "kamerę i mikrofon" if use_video else "mikrofon"
         content_area.info(
             f"💡 **Instrukcja:**\n1. Włącz {device_name} przyciskiem START powyżej.\n2. Kliknij ▶ **Start**, aby zacząć.\n3. Kliknij ⏹ **Stop**, aby zakończyć.")
-    else:
-        content_area.empty()

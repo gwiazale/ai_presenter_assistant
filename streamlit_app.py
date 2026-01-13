@@ -1,22 +1,25 @@
 import time
 import streamlit as st
-from streamlit_webrtc import webrtc_streamer, WebRtcMode
+from streamlit_webrtc import webrtc_streamer, WebRtcMode, RTCConfiguration
 
+# Konfiguracja strony
 st.set_page_config(page_title="Trener Prezentacji", layout="wide")
 
+# 1. KONFIGURACJA RTC (Niezbędna do deployu)
+# Serwery STUN od Google pozwalają na nawiązanie połączenia wideo w chmurze
+RTC_CONFIGURATION = RTCConfiguration(
+    {"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+)
 
 def fmt_time(seconds):
     return f"{int(seconds // 60):02d}:{int(seconds % 60):02d}"
-
 
 # Stan aplikacji
 if "app" not in st.session_state:
     st.session_state.app = {"rec": False, "start": 0, "last_dur": 0, "fb": ""}
 
-
 def start_rec():
     st.session_state.app.update({"rec": True, "start": time.time(), "fb": ""})
-
 
 def stop_rec():
     if st.session_state.app["start"] > 0:
@@ -24,19 +27,20 @@ def stop_rec():
     st.session_state.app.update(
         {"rec": False, "fb": "Prezentacja świetnie poszła! Tu pojawi się dalszy feedback.", "start": 0})
 
-
 def reset():
     st.session_state.app.update({"rec": False, "start": 0, "last_dur": 0, "fb": ""})
 
-
-st.title(" Trener Prezentacji")
+st.title("🎥 Trener Prezentacji")
 col_left, col_right = st.columns([1.2, 1], gap="medium")
 
 with col_left:
+    # 2. DODANIE rtc_configuration DO STREAMERA
     ctx = webrtc_streamer(
         key="camera",
         mode=WebRtcMode.SENDRECV,
-        media_stream_constraints={"video": {"height": 360}, "audio": True}
+        rtc_configuration=RTC_CONFIGURATION,
+        media_stream_constraints={"video": {"height": 360}, "audio": True},
+        async_processing=True, # Poprawia płynność przesyłu
     )
 
 with col_right:
@@ -74,8 +78,9 @@ with col_right:
             st.success(st.session_state.app["fb"])
 
     elif st.session_state.app["last_dur"] == 0:
+        # Instrukcja widoczna tylko na początku i po resecie
         content_area.info(
-            "💡 **Instrukcja:**\n1. Włącz kamerę (Select Device).\n2. Kliknij ▶ **Start**, aby zacząć.\n3. Kliknij ⏹ **Stop**, aby zakończyć.")
+            "💡 **Instrukcja:**\n1. Włącz kamerę przyciskiem powyżej.\n2. Kliknij ▶ **Start**, aby zacząć.\n3. Kliknij ⏹ **Stop**, aby zakończyć.")
 
     else:
         content_area.empty()

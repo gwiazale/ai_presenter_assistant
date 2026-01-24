@@ -34,7 +34,7 @@ with st.sidebar:
     st.header("Ustawienia")
     # Funkcja on_change wywoła reset(), gdy użytkownik kliknie inną opcję
     mode_selection = st.radio(
-        "Wybierz tryb:", 
+        "Wybierz tryb: bogdan-dan-dan", 
         ["Kamera + Mikrofon", "Tylko Mikrofon"],
         on_change=reset
     )

@@ -27,6 +27,7 @@ if not api_key:
         "Brak klucza GEMINI_API_KEY. Dodaj go do st.secrets (secrets.toml) "
         "albo ustaw jako zmienną środowiskową."
     )
+    st.stop()
 else:
     genai.configure(api_key=api_key)
 
@@ -247,7 +248,7 @@ def reset():
 with st.sidebar:
     st.header("Ustawienia")
     mode_selection = st.radio(
-        "Wybierz tryb: bogdan-dan-dan",
+        "Wybierz tryb:",
         ["Kamera + Mikrofon", "Tylko Mikrofon"],
         on_change=reset,  # auto-reset po zmianie trybu
     )

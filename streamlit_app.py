@@ -19,8 +19,8 @@ st.set_page_config(page_title="Trener Prezentacji", layout="wide")
 # ===============================
 # Preferowane: Streamlit Secrets -> .streamlit/secrets.toml:
 # GEMINI_API_KEY = "AIzaSyCGkhTKIy6emz83pWNMSAseHBt_l3jZnF8"
-api_key = st.secrets.get("AIzaSyCGkhTKIy6emz83pWNMSAseHBt_l3jZnF8") if hasattr(st, "secrets") else None
-api_key = api_key or os.getenv("AIzaSyCGkhTKIy6emz83pWNMSAseHBt_l3jZnF8")
+api_key = st.secrets.get("GEMINI_API_KEY") if hasattr(st, "secrets") else None
+api_key = api_key or os.getenv("GEMINI_API_KEY")
 
 if not api_key:
     st.warning(

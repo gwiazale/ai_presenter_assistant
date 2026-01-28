@@ -344,7 +344,7 @@ with col_right:
                 break
 
     # --- PO STOP: TRANSKRYPCJA + ANALIZA (TWOJA FUNKCJONALNOŚĆ) ---
-    elif 1: # has_fb:  # <- wróć do normalnego warunku
+    elif has_fb:  # <- wróć do normalnego warunku
         with content_area.container():
             duration = st.session_state.app["last_dur"]
             st.info(f"⏱ Czas sesji: {fmt_time(duration)}")
@@ -386,13 +386,6 @@ with col_right:
                             st.error("Błąd parsowania odpowiedzi LLM (albo problem z kluczem/API).")
                             if raw:
                                 st.code(raw)
-
-            # Render tylko raz (i tylko tutaj)
-            if st.session_state.app.get("analysis_json"):
-                st.write("---")
-                render_analysis(st.session_state.app["analysis_json"])
-
-
 
             # Jeśli już była analiza wcześniej, pokaż wynik bez ponownego klikania
             if st.session_state.app.get("analysis_json"):

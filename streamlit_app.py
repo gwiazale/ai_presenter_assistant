@@ -124,7 +124,7 @@ Tekst wypowiedzi:
 {text}
 
 Liczba słów: {word_count}
-Czas trwania: {int(duration_seconds)} sekund
+Czas trwania: {max(1, int(round(duration_seconds)))} sekund
 Words per minute (obliczone): {wpm}
 
 ZASADY KRYTYCZNE:
@@ -199,6 +199,37 @@ def render_analysis(data: dict):
     # ---------- FINAL FEEDBACK ----------
     st.subheader("🧾 Ocena końcowa")
     st.success(data.get("final_feedback", ""))
+
+
+def infer_duration_from_timestamps(transcript: str) -> int:
+    """
+    Obsługuje format: [MM:SS-MM:SS]
+    Bierze największy czas końcowy.
+    """
+    pattern = r"\[(\d{2}):(\d{2})-(\d{2}):(\d{2})\]"
+    max_end = 0
+    for m in re.finditer(pattern, transcript):
+        end_min = int(m.group(3))
+        end_sec = int(m.group(4))
+        end_total = end_min * 60 + end_sec
+        max_end = max(max_end, end_total)
+    return max_end
+
+def get_duration_for_analysis(transcript: str, measured_seconds: float) -> int:
+    """
+    1) Weź zmierzony czas (Start->Stop), ale nie mniej niż 1 sek.
+    2) Jeśli zmierzony jest 0 lub bardzo mały, spróbuj policzyć z timestampów.
+    3) Zwróć sensowną liczbę sekund >= 1.
+    """
+    measured_int = int(round(measured_seconds))
+    if measured_int >= 1:
+        return measured_int
+
+    inferred = infer_duration_from_timestamps(transcript)
+    if inferred >= 1:
+        return inferred
+
+    return 1
 
 
 # ===============================
@@ -335,22 +366,27 @@ with col_right:
                     st.warning("Najpierw wklej transkrypcję.")
                 else:
                     with st.spinner("Analiza LLM w toku..."):
-                        raw = ""
                         try:
-                            raw = analyze_text(transcript, duration)
+                            duration_use = get_duration_for_analysis(transcript, st.session_state.app["last_dur"])
+                            raw = analyze_text(transcript, duration_use)
                             data = extract_json(raw)
 
                             st.session_state.app["analysis_raw"] = raw
                             st.session_state.app["analysis_json"] = data
 
-                            render_analysis(data)
-
+                            st.rerun()  # <- ważne: przerzuć rendering do jednego miejsca
                         except Exception:
-                            st.session_state.app["analysis_raw"] = raw
+                            st.session_state.app["analysis_raw"] = raw if "raw" in locals() else ""
                             st.session_state.app["analysis_json"] = None
                             st.error("Błąd parsowania odpowiedzi LLM (albo problem z kluczem/API).")
-                            if raw:
+                            if "raw" in locals() and raw:
                                 st.code(raw)
+
+# Render tylko raz:
+if st.session_state.app.get("analysis_json"):
+    st.write("---")
+    render_analysis(st.session_state.app["analysis_json"])
+
 
             # Jeśli już była analiza wcześniej, pokaż wynik bez ponownego klikania
             if st.session_state.app.get("analysis_json"):

@@ -344,10 +344,11 @@ with col_right:
                 break
 
     # --- PO STOP: TRANSKRYPCJA + ANALIZA (TWOJA FUNKCJONALNOŚĆ) ---
-    elif 1: #has_fb:
+    elif 1: # has_fb:  # <- wróć do normalnego warunku
         with content_area.container():
             duration = st.session_state.app["last_dur"]
             st.info(f"⏱ Czas sesji: {fmt_time(duration)}")
+
             st.write("### 📝 Transkrypcja (demo / ręczna)")
             transcript = st.text_area(
                 "Wklej transkrypcję wypowiedzi:",
@@ -366,26 +367,31 @@ with col_right:
                     st.warning("Najpierw wklej transkrypcję.")
                 else:
                     with st.spinner("Analiza LLM w toku..."):
+                        raw = ""
                         try:
-                            duration_use = get_duration_for_analysis(transcript, st.session_state.app["last_dur"])
+                            duration_use = get_duration_for_analysis(
+                                transcript,
+                                st.session_state.app["last_dur"]
+                            )
                             raw = analyze_text(transcript, duration_use)
                             data = extract_json(raw)
 
                             st.session_state.app["analysis_raw"] = raw
                             st.session_state.app["analysis_json"] = data
+                            st.rerun()
 
-                            st.rerun()  # <- ważne: przerzuć rendering do jednego miejsca
                         except Exception:
-                            st.session_state.app["analysis_raw"] = raw if "raw" in locals() else ""
+                            st.session_state.app["analysis_raw"] = raw
                             st.session_state.app["analysis_json"] = None
                             st.error("Błąd parsowania odpowiedzi LLM (albo problem z kluczem/API).")
-                            if "raw" in locals() and raw:
+                            if raw:
                                 st.code(raw)
 
-# Render tylko raz:
-if st.session_state.app.get("analysis_json"):
-    st.write("---")
-    render_analysis(st.session_state.app["analysis_json"])
+            # Render tylko raz (i tylko tutaj)
+            if st.session_state.app.get("analysis_json"):
+                st.write("---")
+                render_analysis(st.session_state.app["analysis_json"])
+
 
 
             # Jeśli już była analiza wcześniej, pokaż wynik bez ponownego klikania

@@ -344,7 +344,7 @@ with col_right:
                 break
 
     # --- PO STOP: TRANSKRYPCJA + ANALIZA (TWOJA FUNKCJONALNOŚĆ) ---
-    elif 1: #has_fb:  # <- wróć do normalnego warunku
+    elif has_fb:  # <- wróć do normalnego warunku
         with content_area.container():
             duration = st.session_state.app["last_dur"]
             st.info(f"⏱ Czas sesji: {fmt_time(duration)}")
